@@ -699,6 +699,45 @@ impl<T> Py<T> {
         }
     }
 
+    pub fn _call_method_without_kwargs_and_return<N, A>(
+        &self,
+        py: Python<'_>,
+        name: N,
+        args: A,
+        kwargs: Option<&PyDict>,
+    )
+        where
+            N: IntoPy<Py<PyString>>,
+            A: IntoPy<Py<PyTuple>>,
+    {
+        let callee = self.getattr(py, name).expect("no such method in py");
+        let args: Py<PyTuple> = args.into_py(py);
+        let kwargs = kwargs.into_ptr();
+
+        unsafe {
+            // let result = PyObject::from_owned_ptr_or_err(
+            //     py,
+            //     ffi::PyObject_Call(callee.as_ptr(), args.as_ptr(), kwargs),
+            // );
+            let result = PyObject::from_owned_ptr(
+                py,
+                ffi::PyObject_Call(callee.as_ptr(), args.as_ptr(), kwargs),
+            );
+
+            // ffi::Py_XDECREF(kwargs);
+
+        }
+    }
+
+    pub fn call_method_without_kwargs_and_return<N, A>(&self, py: Python<'_>, name: N, args: A)
+        where
+            N: IntoPy<Py<PyString>>,
+            A: IntoPy<Py<PyTuple>>,
+    {
+        self._call_method_without_kwargs_and_return(py, name, args, None)
+    }
+
+
     /// Calls a method on the object with only positional arguments.
     ///
     /// This is equivalent to the Python expression `self.name(*args)`.
